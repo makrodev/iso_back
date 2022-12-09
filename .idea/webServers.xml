@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="cdd7800d-d0a6-44e3-b46d-4b2ae160fbb4" name="iso_back">
+        <fileTransfer rootFolder="/root/iso_back" accessType="SFTP" host="192.168.99.207" port="22" sshConfigId="0c5e1efb-2813-49d1-881b-1d87ef8cc724" sshConfig="root@192.168.99.207:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

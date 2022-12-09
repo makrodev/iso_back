@@ -1,0 +1,5 @@
+docker-compose build
+docker-compose up
+docker exec -it iso_back_container /bin/bash
+docker-compose down
+docker rmi -f $(docker images -aq)
