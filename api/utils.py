@@ -20,7 +20,8 @@ class ExcelUtils:
 
         cell = {
             "A": "Наименование магазина",
-            "B": "Количество несоответствия",
+            "B": "Количество посещений",
+            "C": "Количество несоответствия",
         }
         api_helpers.ExcelHelpers.sheet_title(self, ws, cell, row)
 
@@ -28,32 +29,40 @@ class ExcelUtils:
         violations = api_models.Violation.objects.filter(
             created_at__gte=created_at_from,
             created_at__lte=created_at_to,
-        )
+        ).order_by("shop")
 
-        shops = {}
+        data_list = []
         for violation in violations:
-            if violation.shop.name in shops.keys():
-                shops[violation.shop.name] += 1
-            else:
-                shops[violation.shop.name] = 1
-        shops = dict(sorted(shops.items(), key=lambda item: item[1], reverse=True))
+            for data in data_list:
 
-        for shop in shops:
-            row += 1
-            cell = {
-                "A": f"{shop}",
-                "B": shops[shop],
-            }
-            api_helpers.ExcelHelpers.sheet_text(self, ws, cell, row)
+                if violation.shop.name == data[0] and violation.client.name == data[1]:
+                    data[2] += 1
+                else:
+                    data[0] = violation.shop.name
+                    data[1] = violation.client.name
+                    data[2] = 1
 
-        # FOOTER
-        row += 1
-        cell = {
-            "A": "Общий итог",
-            "B": violations.count(),
-        }
-        api_helpers.ExcelHelpers.sheet_title(self, ws, cell, row)
-        api_helpers.ExcelHelpers.sheet_width(self, ws, cell)
+                    data_list.append(data)
+        print(data_list)
+
+        # shops = dict(sorted(shops.items(), key=lambda item: item[1], reverse=True))
+
+        # for shop in shops:
+        #     row += 1
+        #     cell = {
+        #         "A": f"{shop}",
+        #         "B": shops[shop],
+        #     }
+        #     api_helpers.ExcelHelpers.sheet_text(self, ws, cell, row)
+        #
+        # # FOOTER
+        # row += 1
+        # cell = {
+        #     "A": "Общий итог",
+        #     "B": violations.count(),
+        # }
+        # api_helpers.ExcelHelpers.sheet_title(self, ws, cell, row)
+        # api_helpers.ExcelHelpers.sheet_width(self, ws, cell)
 
     def report_process_func(self):
         created_at_from = api_helpers.ExcelHelpers.created_at_from_to_generate(self, self.year, self.month)['from']
@@ -82,7 +91,6 @@ class ExcelUtils:
             "K": "100%",
         }
         api_helpers.ExcelHelpers.sheet_title(self, report_process_sheet, cell, row)
-
 
         processes = api_models.Process.objects.values("title")
         processes = [process['title'] for process in processes]
