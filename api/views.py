@@ -502,7 +502,17 @@ class ExcelAPIView(APIView):
 
     def get(self, request, month, year):
         wb = Workbook()
-        excel = ExcelUtils(year=year, month=month, wb=wb)
+
+        created_at_from = api_helpers.ExcelHelpers.generate_next_month(self, year, month)['from']
+        created_at_to = api_helpers.ExcelHelpers.generate_next_month(self, year, month)['to']
+
+        days_in_month_list = api_helpers.ExcelHelpers.days_in_month_func(self, year, month)
+
+        excel = ExcelUtils(
+            year=year, month=month, wb=wb,
+            created_at_from=created_at_from, created_at_to=created_at_to,
+            days_in_month_list=days_in_month_list,
+        )
 
         excel.report_market_func()
         excel.report_process_func()
@@ -510,6 +520,7 @@ class ExcelAPIView(APIView):
         excel.report_attendance_func()
         excel.report_general_func()
         # report_weeks_func()
+        wb.active = wb['Отчет по маркетам']
 
         if int(month) < 10:
             month = f"0{month}"

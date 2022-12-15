@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 
 from main import settings
 from .models import *
+from .helpers import *
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -183,6 +184,7 @@ class ViolationSerializer(serializers.ModelSerializer):
             "photo",
             "response_admin",
             "response_person_description",
+            # "result_action",
             "status",
             "process",
             "is_no_violation",
@@ -208,6 +210,7 @@ class ViolationAPISerializer(serializers.ModelSerializer):
             "photo_url",
             "response_admin",
             "response_person_description",
+            # "result_action",
             "status",
             "process",
             "is_no_violation",
@@ -225,29 +228,13 @@ class ViolationAPISerializer(serializers.ModelSerializer):
         return violation
 
     def update(self, instance, validated_data):
-        instance.client = validated_data.get('client', instance.client)
-        instance.region = validated_data.get('region', instance.region)
-        instance.shop = validated_data.get('shop', instance.shop)
-        instance.department = validated_data.get('department', instance.department)
-        instance.problem = validated_data.get('problem', instance.problem)
-        instance.disparity = validated_data.get('disparity', instance.disparity)
-        instance.comment = validated_data.get('comment', instance.comment)
-        instance.photo = validated_data.get('photo', instance.photo)
-        instance.response_admin = validated_data.get('response_admin', instance.response_admin)
-        instance.response_person_description = validated_data.get('response_person_description', instance.response_person_description)
-        instance.status = validated_data.get('status', instance.status)
-        instance.process = validated_data.get('process', instance.process)
-        instance.is_active = validated_data.get('is_active', instance.is_active)
-        instance.save()
+        instance = ViolationHelpers.update(self, instance=instance, validated_data=validated_data)
 
-        if validated_data['status'].pk == 2:
-            # BOT SETTINGS
-            command_violation = Content.objects.get(key="commands_violation")
-
-            bot_message = f"Вам пришло новое сообщение о нарушении\nНажмите сюда {command_violation.title}{instance.pk} чтобы ответить на него"
-
-            base_url = f'{settings.TELEGRAM_DOMAIN}/bot{settings.BOT_KEY}/sendMessage?chat_id={instance.response_admin.tg_id}&text={bot_message}'
-            requests.get(url=base_url)
+        try:
+            if validated_data['status'].pk == 2:
+                ViolationHelpers.send_bot_violation_message(self, instance=instance)
+        except KeyError:
+            pass
 
         return instance
 

@@ -247,6 +247,23 @@ def violationSeed():
     print("Violation import successfully!", end="\n\n")
 
 
+def violation_response_admin_random():
+    admins = Admin.objects.filter(is_staff=1, is_superuser=0).all()
+    admin_list = []
+    for admin in admins:
+        admin_list.append(admin.id)
+
+    violations = Violation.objects.all()
+    for violation in violations:
+        print(violation.id)
+        admin_id = random.choice(admin_list)
+        violation_row = Violation.objects.get(id=violation.id)
+        violation_row.response_admin_id = admin_id
+        violation_row.save()
+
+    print("Violation response admin was changed")
+
+
 def clear_data():
     truncate("client")
     truncate("violation")
@@ -254,7 +271,7 @@ def clear_data():
 
 def dbSeed():
     check_foreign_key(0)
-    adminSeed()
+    # adminSeed()
     # processAdminSeed()
     # statusAdminSeed()
     # buttonSeed()
@@ -265,6 +282,6 @@ def dbSeed():
     # problemSeed()
     # disparitySeed()
     # violationSeed()
-    clear_data()
+    # clear_data()
     check_foreign_key(1)
     print("OK!")
