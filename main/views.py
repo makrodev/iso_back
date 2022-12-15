@@ -3,8 +3,10 @@ import os
 import random
 import datetime
 
+from django.core.files.base import ContentFile, File
 from django.db import connection
 from django.shortcuts import redirect
+from PIL import Image
 from rest_framework.authtoken.models import Token
 
 from main.settings import BASE_DIR
@@ -37,7 +39,6 @@ def processAdminSeed():
     truncate("process")
     with open(os.path.join(BASE_DIR, 'media/csv/process.csv'), 'r', encoding="utf8") as csv_file:
         csv_reader = csv.reader(csv_file)
-
         for line in csv_reader:
             Process.objects.create(
                 title=line[0],
@@ -154,61 +155,86 @@ def adminSeed():
 
     admin_data = {"login": "admin"}
 
-    admin = Admin(
+    Admin.objects.create_superuser(
         phone=admin_data['login'],
-        is_superuser=1,
+        password=admin_data['login'],
     )
-    admin.set_password(admin_data['login'])
-    admin.save()
 
-    token = Token.objects.create(user_id=admin.id)
+    for i in range(1, 5):
+        admin_data = {"login": f"ali{i}"}
+
+        Admin.objects.create_is_staff(
+            phone=admin_data['login'],
+            password=admin_data['login'],
+        )
 
     print("Admin import successfully!", end="\n\n")
 
 
-def violationSeed():
-    # truncate("violation")
-    # with open(os.path.join(BASE_DIR, 'media/csv/violations.csv'), 'r', encoding="utf8") as csv_file:
-    #     csv_reader = csv.reader(csv_file)
-    #
-    #     for line in csv_reader:
-    #         if line[11] is not None and line[12] is not None and line[13] is not None and \
-    #                 line[14] is not None and line[4] is not None and line[1] is not None and line[3] is not None:
-    #             try:
-    #                 client = Client.objects.get(phone=line[3])
-    #             except Client.DoesNotExist:
-    #                 client = Client.objects.create(
-    #                     name=line[1],
-    #                     phone=line[3],
-    #                     tg_id=" ",
-    #                 )
-    #             try:
-    #                 region_id = Shop.objects.get(id=line[11]).region_id
-    #
-    #                 processes = Process.objects.values_list('id')
-    #                 random_process_id = random.choice(processes)[0]
-    #
-    #                 admins = Admin.objects.values_list('id')
-    #                 random_admins_id = random.choice(admins)[0]
-    #
-    #                 statuses = Status.objects.values_list('id')
-    #                 random_statuses_id = random.choice(statuses)[0]
-    #
-    #                 violation = Violation.objects.create(
-    #                     region_id=region_id,
-    #                     shop_id=line[11],
-    #                     department_id=line[12],
-    #                     problem_id=line[13],
-    #                     disparity_id=line[14],
-    #                     comment=line[4],
-    #                     client_id=client.id,
-    #                     process_id=random_process_id,
-    #                     response_admin_id=random_admins_id,
-    #                     status_id=random_statuses_id,
-    #                 )
-    #             except Shop.DoesNotExist:
-    #                 pass
+def clientSeed():
+    truncate("client")
+    for i in range(1, 15):
+        Client.objects.create(
+            phone=998971111110 + i,
+            tg_id=1 + i,
+            name="client" + str(i)
+        )
+    print("Client was create successfully")
 
+
+def violationSeed():
+    truncate("violation")
+    with open("media/test/test.png", 'rb') as f:
+
+        for i in range(1, 3000):
+            client_list = Client.objects.values_list('id')
+            client_id = random.choice(client_list)[0]
+
+            region_list = Region.objects.values_list('id')
+            region_id = random.choice(region_list)[0]
+
+            shop_list = Shop.objects.filter(region_id=region_id).values_list('id')
+            shop_id = random.choice(shop_list)[0]
+
+            department_list = Department.objects.values_list('id')
+            department_id = random.choice(department_list)[0]
+
+            problem_list = Problem.objects.values_list('id')
+            problem_id = random.choice(problem_list)[0]
+
+            disparity_list = Disparity.objects.filter(problem_id=problem_id).values_list('id')
+            disparity_id = random.choice(disparity_list)[0]
+
+            processes = Process.objects.values_list('id')
+            random_process_id = random.choice(processes)[0]
+
+            admins = Admin.objects.values_list('id')
+            random_admins_id = random.choice(admins)[0]
+
+            statuses = Status.objects.values_list('id')
+            random_statuses_id = random.choice(statuses)[0]
+
+            comment = "test_comment"
+
+            Violation.objects.create(
+                region_id=region_id,
+                shop_id=shop_id,
+                department_id=department_id,
+                problem_id=problem_id,
+                disparity_id=disparity_id,
+                comment=comment,
+                client_id=client_id,
+                process_id=random_process_id,
+                response_admin_id=random_admins_id,
+                status_id=random_statuses_id,
+                photo=File(f, name=f"test{i}.png"),
+            )
+
+    change_date_violation()
+    print("Violation import successfully!", end="\n\n")
+
+
+def change_date_violation():
     violation_last = Violation.objects.order_by("-id").first().id
 
     def week_day_func(year, month, day):
@@ -243,8 +269,7 @@ def violationSeed():
                     year += 1
         else:
             return False
-
-    print("Violation import successfully!", end="\n\n")
+    print("Violation date change successfully!", end="\n\n")
 
 
 def violation_response_admin_random():
@@ -255,10 +280,11 @@ def violation_response_admin_random():
 
     violations = Violation.objects.all()
     for violation in violations:
-        print(violation.id)
         admin_id = random.choice(admin_list)
         violation_row = Violation.objects.get(id=violation.id)
         violation_row.response_admin_id = admin_id
+        violation_row.response_person_description = f"response_description {violation_row.id}"
+        violation_row.result_action = f"result_action {violation_row.id}"
         violation_row.save()
 
     print("Violation response admin was changed")
@@ -271,17 +297,19 @@ def clear_data():
 
 def dbSeed():
     check_foreign_key(0)
-    # adminSeed()
-    # processAdminSeed()
-    # statusAdminSeed()
-    # buttonSeed()
-    # contentSeed()
-    # regionSeed()
-    # shopSeed()
-    # departmentSeed()
-    # problemSeed()
-    # disparitySeed()
-    # violationSeed()
+    adminSeed()
+    clientSeed()
+    processAdminSeed()
+    statusAdminSeed()
+    buttonSeed()
+    contentSeed()
+    regionSeed()
+    shopSeed()
+    departmentSeed()
+    problemSeed()
+    disparitySeed()
+    violationSeed()
+    violation_response_admin_random()
     # clear_data()
     check_foreign_key(1)
     print("OK!")

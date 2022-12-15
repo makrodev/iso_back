@@ -35,7 +35,6 @@ class ExcelUtils:
             created_at__lte=self.created_at_to,
             is_no_violation=0,
         ).order_by("shop")
-
         data_list = []
         for violation in violations:
             data = {
@@ -198,7 +197,7 @@ class ExcelUtils:
                 status_id=status.id,
             ).order_by("response_admin_id")
             for violation in violations_by_status:
-
+                print(violation.response_admin.name)
                 row += 1
                 cell = {
                     "A": violation.status.title,

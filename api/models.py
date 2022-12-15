@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django_softdelete.models import SoftDeleteModel, SoftDeleteQuerySet
 from django.contrib.auth.models import PermissionsMixin
+from rest_framework.authtoken.models import Token
 
 
 class Status(SoftDeleteModel):
@@ -36,6 +37,10 @@ class CustomAdminManager(BaseUserManager):
     def get_queryset(self):
         return SoftDeleteQuerySet(self.model).filter(is_deleted=False)
 
+    def create_token(self, user_id):
+        token, is_created = Token.objects.get_or_create(user_id=user_id)
+        return token
+
     def create_superuser(self, phone, password, **other_fields):
         other_fields.setdefault('is_staff', True)
         other_fields.setdefault('is_superuser', True)
@@ -45,8 +50,25 @@ class CustomAdminManager(BaseUserManager):
             raise ValueError('Staff must be assigned to is_staff=True')
         if other_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must be assigned to is_superuser=True')
+        user = self.model(phone=phone, **other_fields)
+        user.set_password(password)
+        user.save()
+        self.create_token(user_id=user.id)
+        return user
 
-        return self.create_user(phone, password, **other_fields)
+    def create_is_staff(self, phone, password, **other_fields):
+        other_fields.setdefault('is_staff', True)
+        other_fields.setdefault('is_superuser', False)
+        other_fields.setdefault('is_active', True)
+
+        if not phone:
+            raise ValueError("You must provide an phone number")
+
+        user = self.model(phone=phone, **other_fields)
+        user.set_password(password)
+        user.save()
+        self.create_token(user_id=user.id)
+        return user
 
     def create_user(self, phone, password, **other_fields):
         if not phone:
