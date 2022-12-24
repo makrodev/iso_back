@@ -1,4 +1,8 @@
 venv/
 media/excel/
 media/uploads/
-settings.py
+# exclude everything
+main/*
+
+# exception to the rule
+!main/urls.py
