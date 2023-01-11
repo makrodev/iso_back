@@ -1,5 +1,3 @@
 venv/
 media/
-main/
-!main/urls.py
 !media/csv/
