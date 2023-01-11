@@ -35,7 +35,7 @@ def truncate_token():
     print(f"authtoken_token truncated successfully")
 
 
-def processAdminSeed():
+def processSeed():
     truncate("process")
     with open(os.path.join(BASE_DIR, 'media/csv/process.csv'), 'r', encoding="utf8") as csv_file:
         csv_reader = csv.reader(csv_file)
@@ -46,14 +46,14 @@ def processAdminSeed():
     print("Process import successfully!", end="\n\n")
 
 
-def statusAdminSeed():
+def statusSeed():
     truncate("status")
     with open(os.path.join(BASE_DIR, 'media/csv/status.csv'), 'r', encoding="utf8") as csv_file:
         csv_reader = csv.reader(csv_file)
 
         for line in csv_reader:
             Status.objects.create(
-                title=line[0],
+                title=line[1],
             )
     print("Status import successfully!", end="\n\n")
 
@@ -299,8 +299,8 @@ def dbSeed():
     check_foreign_key(0)
     # adminSeed()
     # clientSeed()
-    # processAdminSeed()
-    # statusAdminSeed()
+    # processSeed()
+    # statusSeed()
     buttonSeed()
     contentSeed()
     # regionSeed()
